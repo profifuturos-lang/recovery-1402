@@ -169,7 +169,14 @@
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isDone ? 'bg-zinc-800 text-zinc-500' : 'bg-emerald-500/10 text-emerald-500'}`}>{isDone ? 'COMPLETADO' : 'LISTO'}</span>
                         {isAdmin && <button onClick={() => onDelete(task.id)} className="text-zinc-700 hover:text-red-500 transition-colors"><Icons.Trash2 /></button>}
                     </div>
-                    <p className="text-sm text-zinc-400 mb-6 italic line-clamp-2">"{task.message}"</p>
+                    
+                    {/* AQUI ESTÁ LA MAGIA: Si es Admin muestra el texto, si no, muestra encriptado */}
+                    {isAdmin ? (
+                        <p className="text-sm text-zinc-400 mb-6 italic line-clamp-2">"{task.message}"</p>
+                    ) : (
+                        <p className="text-[10px] font-mono text-zinc-600 mb-6 tracking-widest">[ MENSAJE ENCRIPTADO ]</p>
+                    )}
+
                     <button 
                         onClick={() => onExecute(task)} 
                         disabled={isDone}
