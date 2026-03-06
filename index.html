@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA RECOVERY 1402 - LIVE</title>
+    <title>SISTEMA RECOVERY 1402</title>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -11,17 +11,16 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0a0a0a; color: #f4f4f5; margin: 0; }
-        .glass { background: rgba(24, 24, 27, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(39, 39, 42, 0.5); }
-        .btn-active { background-color: #10b981; color: #000; }
-        .btn-done { background-color: #27272a; color: #71717a; cursor: not-allowed; }
+        body { background-color: #000; color: #fff; font-family: sans-serif; }
+        .card-task { background: #111; border: 1px solid #222; border-radius: 12px; margin-bottom: 15px; padding: 20px; }
+        .btn-green { background: #22c55e; color: #000; font-weight: bold; width: 100%; padding: 12px; border-radius: 8px; }
+        .btn-gray { background: #333; color: #777; width: 100%; padding: 12px; border-radius: 8px; cursor: not-allowed; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        // CONFIGURACIÓN DE RONALD
         const firebaseConfig = {
             apiKey: "AIzaSyD-qTf1qCOc-JEPCCd50OXDUwcbCcN4HBY",
             authDomain: "recovery-wsp.firebaseapp.com",
@@ -32,7 +31,6 @@
             appId: "1:406896497225:web:ca25dd75b11e0f386c2598"
         };
 
-        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -43,112 +41,72 @@
             const [phone, setPhone] = React.useState('');
             const [msg, setMsg] = React.useState('');
 
-            // ESCUCHAR CAMBIOS EN VIVO
             React.useEffect(() => {
                 const tasksRef = db.ref('tasks');
                 tasksRef.on('value', (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
                         const list = Object.keys(data).map(id => ({ id, ...data[id] }));
-                        setTasks(list.reverse()); // Los nuevos primero
-                    } else {
-                        setTasks([]);
-                    }
+                        setTasks(list.reverse());
+                    } else { setTasks([]); }
                 });
             }, []);
 
             const addTask = (e) => {
                 e.preventDefault();
-                if (!phone || !msg) return;
-                const newTask = {
+                db.ref('tasks').push({
                     phone: phone.replace(/\D/g, ''),
                     message: msg,
                     status: 'DISPONIBLE'
-                };
-                db.ref('tasks').push(newTask);
+                });
                 setPhone(''); setMsg('');
             };
 
             const executeTask = (task) => {
                 if (task.status === 'COMPLETADO') return;
-                
-                // Abrir WhatsApp
-                const url = `https://wa.me/${task.phone}?text=${encodeURIComponent(task.message)}`;
-                window.open(url, '_blank');
-                
-                // Actualizar en la NUBE para todos
+                window.open(`https://wa.me/${task.phone}?text=${encodeURIComponent(task.message)}`, '_blank');
                 db.ref('tasks/' + task.id).update({ status: 'COMPLETADO' });
             };
 
-            const deleteTask = (id) => {
-                if(confirm("¿Borrar mensaje?")) db.ref('tasks/' + id).remove();
-            };
-
             return (
-                <div className="min-h-screen p-4 max-w-2xl mx-auto">
-                    <header className="flex justify-between items-center py-8">
-                        <h1 className="text-2xl font-black text-emerald-500 tracking-tighter">RECOVERY_SYNC_1402</h1>
-                        <button onClick={() => setIsAdmin(!isAdmin)} className="text-[10px] font-bold border border-zinc-800 px-3 py-1 rounded-full hover:bg-zinc-900">
-                            {isAdmin ? 'SALIR' : 'ADMIN'}
-                        </button>
-                    </header>
+                <div className="max-w-md mx-auto p-4">
+                    <div className="flex justify-between items-center my-6">
+                        <h1 className="text-xl font-bold">RECOVERY_1402</h1>
+                        <button onClick={() => setIsAdmin(!isAdmin)} className="text-xs text-gray-500">ADMIN</button>
+                    </div>
 
                     {isAdmin && (
-                        <div className="mb-10 p-6 glass rounded-3xl shadow-2xl border-emerald-500/20">
+                        <div className="bg-zinc-900 p-4 rounded-xl mb-8 border border-zinc-800">
                             {pass !== 'PERRA' ? (
-                                <input 
-                                    type="password" 
-                                    placeholder="PASSWORD" 
-                                    onChange={(e)=>setPass(e.target.value.toUpperCase())} 
-                                    className="w-full bg-black p-4 rounded-2xl border border-zinc-800 text-center font-bold tracking-[1em] outline-none focus:border-emerald-500" 
-                                />
+                                <input type="password" placeholder="CLAVE" className="w-full bg-black p-2 border border-zinc-700 text-center" onChange={e => setPass(e.target.value.toUpperCase())} />
                             ) : (
-                                <form onSubmit={addTask} className="space-y-4">
-                                    <p className="text-center text-xs text-emerald-500 font-bold mb-2">MODO ADMINISTRADOR ACTIVO</p>
-                                    <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Número (ej: 1503...)" className="w-full bg-black p-4 rounded-2xl border border-zinc-800 outline-none focus:border-emerald-500" required />
-                                    <textarea value={msg} onChange={e=>setMsg(e.target.value)} placeholder="Mensaje para el objetivo..." className="w-full bg-black p-4 rounded-2xl border border-zinc-800 h-24 outline-none focus:border-emerald-500" required />
-                                    <button className="w-full bg-emerald-500 text-black font-black py-4 rounded-2xl hover:bg-emerald-400 transition-all">SUBIR A LA NUBE</button>
+                                <form onSubmit={addTask} className="flex flex-col gap-2">
+                                    <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Número" className="bg-black p-2 border border-zinc-700" />
+                                    <textarea value={msg} onChange={e=>setMsg(e.target.value)} placeholder="Mensaje" className="bg-black p-2 border border-zinc-700 h-20" />
+                                    <button className="bg-white text-black font-bold p-2">AÑADIR A LA LISTA</button>
                                 </form>
                             )}
                         </div>
                     )}
 
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between px-2">
-                            <h2 className="text-xs font-black text-zinc-500 tracking-widest uppercase">Cola de Mensajes ({tasks.length})</h2>
-                            <div className="h-[1px] flex-grow mx-4 bg-zinc-900"></div>
-                        </div>
-
-                        {tasks.length === 0 && (
-                            <div className="text-center py-20 border-2 border-dashed border-zinc-900 rounded-3xl">
-                                <p className="text-zinc-700 font-bold italic">Esperando órdenes del servidor...</p>
-                            </div>
-                        )}
-
+                    <div>
                         {tasks.map(t => (
-                            <div key={t.id} className={`p-6 rounded-3xl border transition-all duration-500 ${t.status === 'COMPLETADO' ? 'border-zinc-900 bg-zinc-950 opacity-30 grayscale' : 'border-zinc-800 bg-zinc-900/50 shadow-xl'}`}>
-                                <div className="flex justify-between items-start mb-4">
-                                    <span className={`text-[10px] font-black px-3 py-1 rounded-full ${t.status === 'COMPLETADO' ? 'bg-zinc-800 text-zinc-500' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'}`}>
-                                        {t.status}
-                                    </span>
-                                    {isAdmin && pass === 'PERRA' && (
-                                        <button onClick={() => deleteTask(t.id)} className="text-zinc-700 hover:text-red-500 text-xs font-bold">BORRAR</button>
-                                    )}
+                            <div key={t.id} className="card-task">
+                                <div className="flex justify-between mb-2">
+                                    <span className="text-xs font-bold text-gray-500 uppercase">{t.status}</span>
+                                    {isAdmin && pass === 'PERRA' && <button onClick={() => db.ref('tasks/'+t.id).remove()} className="text-red-900 text-xs">ELIMINAR</button>}
                                 </div>
-                                <p className="text-sm mb-6 text-zinc-300 font-medium leading-relaxed italic">"{t.message}"</p>
+                                <p className="text-sm text-gray-300 mb-4 italic">"{t.message}"</p>
                                 <button 
                                     onClick={() => executeTask(t)} 
-                                    disabled={t.status === 'COMPLETADO'} 
-                                    className={`w-full py-4 rounded-2xl font-black text-[11px] tracking-widest transition-all ${t.status === 'COMPLETADO' ? 'btn-done' : 'btn-active hover:scale-[1.02] active:scale-95 shadow-lg shadow-emerald-500/20'}`}
+                                    className={t.status === 'COMPLETADO' ? 'btn-gray' : 'btn-green'}
+                                    disabled={t.status === 'COMPLETADO'}
                                 >
-                                    {t.status === 'COMPLETADO' ? 'TAREAS FINALIZADA' : 'EJECUTAR ATAQUE WHATSAPP'}
+                                    {t.status === 'COMPLETADO' ? 'ENVIADO' : 'ENVIAR POR WHATSAPP'}
                                 </button>
                             </div>
                         ))}
                     </div>
-                    <footer className="mt-20 text-center py-10 opacity-20">
-                        <p className="text-[10px] font-bold tracking-widest">PORTLAND_1402_RECOVERY_SYSTEM</p>
-                    </footer>
                 </div>
             );
         }
